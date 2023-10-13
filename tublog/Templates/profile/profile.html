@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Profile</title>
+</head>
+<body>
+    <h1>User Profile</h1>
+    <p>Username: {{ user_profile.user.username }}</p>
+    <p>Bio: {{ user_profile.bio }}</p>
+    <p>Website: <a href="{{ user_profile.website }}">{{ user_profile.website }}</a></p>
+    <img src="{{ user_profile.avatar.url }}" alt="User Avatar">
+</body>
+</html>
