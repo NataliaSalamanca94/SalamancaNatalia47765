@@ -1,9 +1,11 @@
 from django.contrib.auth import login, logout
+from django.contrib.auth.views import LoginView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from .models import BlogPost,Category, Tag,UserProfile, User
 from .forms import CategoryForm, TagForm,UserProfileForm
 from django.http import Http404
@@ -15,10 +17,20 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+
+            # Check if the user has a profile, and if not, redirect to profile creation
+            if not UserProfile.objects.filter(user=user).exists():
+                return redirect('create_profile')
+
+            # User has a profile, so redirect to home or any other desired page
             return redirect('home')
+
     else:
         form = UserCreationForm()
+    
+    
     return render(request, 'registration/signup.html', {'form': form})
+
 
 def user_logout(request):
     logout(request)
@@ -29,12 +41,20 @@ def user_logout(request):
 class BlogPostListView(ListView):
     model = BlogPost
     template_name = 'blog/blogpost_list.html'
+    context_object_name = 'blogposts'  # Define the context variable name
 
-class BlogPostCreateView(CreateView):
+
+class BlogPostCreateView(LoginRequiredMixin, CreateView):
     model = BlogPost
     template_name = 'blog/blogpost_form.html'
     fields = ['title', 'content', 'categories', 'tags']
+    success_url = reverse_lazy('blogpost_list')
 
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user  # Set the author to the logged-in user
+        return super().form_valid(form)
+    
 class BlogPostUpdateView(UpdateView):
     model = BlogPost
     template_name = 'blog/blogpost_form.html'
@@ -44,6 +64,11 @@ class BlogPostDeleteView(DeleteView):
     model = BlogPost
     template_name = 'blog/blogpost_confirm_delete.html'
     success_url = reverse_lazy('blogpost_list')
+
+class BlogPostDetailView(DetailView):
+    model = BlogPost
+    template_name = 'blog/blogpost_detail.html'
+    context_object_name = 'blogpost'
 
 class SearchResultsView(ListView):
     model = BlogPost
@@ -72,6 +97,16 @@ class SearchResultsView(ListView):
             context['no_results'] = True
 
         return context
+    
+
+class CustomLoginView(LoginView):
+    def form_valid(self, form):
+        if self.request.user.is_authenticated:
+            user = self.request.user
+            if not UserProfile.objects.filter(user=user).exists():
+                return redirect('create_profile')
+        return super().form_valid(form)
+
 
 
 def home(request):
@@ -133,3 +168,17 @@ def edit_profile(request):
         form = UserProfileForm(instance=user_profile)
 
     return render(request, 'profile/edit_profile.html', {'form': form})
+
+def create_profile(request):
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Save the profile associated with the current user
+            profile = form.save(commit=False)
+            profile.user = request.user
+            profile.save()
+            return redirect('profile', username=request.user.username)
+    else:
+        form = UserProfileForm()
+
+    return render(request, 'profile/create_profile.html', {'form': form})

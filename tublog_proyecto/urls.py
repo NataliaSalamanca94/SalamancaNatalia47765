@@ -1,14 +1,17 @@
-from django.contrib.auth import views as auth_views  # Import Django's built-in auth views
-
-# Your other imports remain the same
+from django.contrib.auth import views as auth_views
 from tublog import views
 from django.urls import path
 from django.contrib.auth.decorators import login_required
+from tublog.views import CustomLoginView
+from django.conf import settings
+from django.conf.urls.static import static
+
+
 
 urlpatterns = [
     # ... Other URL patterns ...
     path('signup/', views.signup, name='signup'),
-    path('login/', auth_views.LoginView.as_view(), name='login'),  # Use auth_views.LoginView
+    path('login/', CustomLoginView.as_view(), name='login'),  # Use the custom login view
     path('logout/', views.user_logout, name='user_logout'),
     path('blogposts/', views.BlogPostListView.as_view(), name='blogpost_list'),
     path('blogposts/create/', login_required(views.BlogPostCreateView.as_view()), name='blogpost_create'),
@@ -21,5 +24,10 @@ urlpatterns = [
     path('tags/create/', views.tag_create, name='tag_create'),
     path('tags/', views.tag_list, name='tag_list'),
     path('profile/<str:username>/', views.profile, name='profile'),
-    path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('edit_profile/', views.edit_profile, name='edit_profile'),
+    path('create_profile/', views.create_profile, name='create_profile'),
+    path('blogposts/<int:pk>/', views.BlogPostDetailView.as_view(), name='blogpost_detail'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
