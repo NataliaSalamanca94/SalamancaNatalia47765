@@ -29,3 +29,8 @@ Este proyecto desarrolla un blog personal donde se puede poner información prop
 ## Instalación
 
 Descargue los archvicos a su equipo y corra un servidor, acceda con la dirección creada.
+
+
+## Uso
+
+https://www.youtube.com/watch?v=i6z4HfxKK1U
